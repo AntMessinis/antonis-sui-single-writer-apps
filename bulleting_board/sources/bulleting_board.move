@@ -8,6 +8,8 @@ module bulleting_board::bulleting_board {
     use std::option::{Self, Option};
     use sui::event;
 
+    // #### TODO add functionality that allows admin to delete notes on both bulleting boards
+    // #### TODO add testing functions
 
     // A shared bulleting board where anyone can post a note
     struct PublicBulletingBoard has key {
@@ -27,6 +29,7 @@ module bulleting_board::bulleting_board {
         id: UID
     }
 
+    // A bulleting note that has a title, a body, a possible reference to another object and an author
     struct BulletingNote has key, store{
         id: UID,
         note_title: String,
@@ -35,17 +38,20 @@ module bulleting_board::bulleting_board {
         note_author: address
     }
 
+    // An event that announces that someone has posted a new note on public bulleting board
     struct NewNotePostedEvent has copy, drop {
         note_title: String,
         note_id: ID,
         note_author: address,
     }
 
+    // An event that announces that the admin has posted a new note
     struct NewAdminPostEvent has copy, drop {
         note_id: ID,
         note_title: String
     }
 
+    // An event that announces that the current admin is transfering administrative rights
     struct TransferAdminOwnershipEvent has copy, drop {
         old_owner: address,
         new_owner: address
@@ -229,7 +235,7 @@ module bulleting_board::bulleting_board {
     public fun readNoteFromBulletingBoard(
         board: &mut PublicBulletingBoard, 
         note_id: &ID, 
-        ctx: &mut TxContext
+        _ctx: &mut TxContext
         ): (&String, &String, &address, &address){
 
         let note_ref = vec_map::get<ID, BulletingNote>(&mut board.notes, note_id);
