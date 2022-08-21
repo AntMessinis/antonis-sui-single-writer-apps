@@ -35,15 +35,20 @@ module bulleting_board::bulleting_board {
         note_author: address
     }
 
-    struct NotePostedEvent has copy, drop {
+    struct NewNotePostedEvent has copy, drop {
         note_title: String,
         note_id: ID,
         note_author: address,
     }
 
-    struct AdminPostEvent has copy, drop {
+    struct NewAdminPostEvent has copy, drop {
         note_id: ID,
         note_title: String
+    }
+
+    struct TransferAdminOwnershipEvent has copy, drop {
+        old_owner: address,
+        new_owner: address
     }
 
 
@@ -107,7 +112,7 @@ module bulleting_board::bulleting_board {
                 });
 
             // Announce to everyone that you have posted a Note
-            event::emit(NotePostedEvent{
+            event::emit(NewNotePostedEvent{
                 note_author: author,
                 note_id: id,
                 note_title: title
@@ -144,7 +149,7 @@ module bulleting_board::bulleting_board {
             });
 
         // Announce to everyone that you have posted a Note
-        event::emit(NotePostedEvent{
+        event::emit(NewNotePostedEvent{
             note_author: author,
             note_id: id,
             note_title: title
@@ -179,7 +184,7 @@ module bulleting_board::bulleting_board {
                 note_author: *&author    
             });
 
-            event::emit(AdminPostEvent{
+            event::emit(NewAdminPostEvent{
                 note_id: id,
                 note_title: title
             });
@@ -215,10 +220,42 @@ module bulleting_board::bulleting_board {
                 note_author: *&author    
             });
 
-            event::emit(AdminPostEvent{
+            event::emit(NewAdminPostEvent{
                 note_id: id,
                 note_title: title
             });
     }
 
+    public fun readNoteFromBulletingBoard(
+        board: &mut PublicBulletingBoard, 
+        note_id: &ID, 
+        ctx: &mut TxContext
+        ): (&String, &String, &address, &address){
+
+        let note_ref = vec_map::get<ID, BulletingNote>(&mut board.notes, note_id);
+
+        (&note_ref.note_title, &note_ref.note_body, option::borrow(&note_ref.referenced_item) , &note_ref.note_author)
+    }
+
+    public fun readNoteFromAdminBulletingBoard(
+        board: &mut AdminBulletingBoard,
+        note_id: &ID,
+        ctx: &mut TxContext
+    ): (&String, &String, &address, &address){
+
+        let note_ref = vec_map::get<ID, BulletingNote>(&mut board.notes, note_id);
+
+        (&note_ref.note_title, &note_ref.note_body, option::borrow(&note_ref.referenced_item) , &note_ref.note_author)
+    }
+
+
+    // Transfer the administrative rights of AdminBulletingBoard and announce it so everyone knows who the next owner is
+    public fun transferAdminRights(cap: BulletingBoardAdmin, next_owner: address ,ctx: &mut TxContext){
+        transfer::transfer(cap, *&next_owner);
+
+        event::emit(TransferAdminOwnershipEvent{
+            old_owner: tx_context::sender(ctx),
+            new_owner: next_owner
+        })
+    }
 }
