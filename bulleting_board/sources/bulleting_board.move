@@ -8,7 +8,10 @@ module bulleting_board::bulleting_board {
     use std::option::{Self, Option};
     use sui::event;
 
-    // #### TODO add functionality that allows admin to delete notes on both bulleting boards
+    // This module creates two bulleting boards
+    // One where everyone is allowed to post notes 
+    // And one where only an admin is allowed to post notes
+
     // #### TODO add testing functions
 
     // A shared bulleting board where anyone can post a note

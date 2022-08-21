@@ -9,12 +9,15 @@ module movie_rating::movie_rating{
     use sui::event;
 
 
+    // A shared object where movie objects are stored
     struct IMDB has key {
         id: UID,
         movie_db: VecMap<ID, Movie>, // The key is the id of the Movie
         admin_id: ID
     }
 
+    // Only the admin has the authority to add movies
+    // But anyone can add add a rating
     struct MovieAdmin has key {
         id: UID
     }
@@ -44,6 +47,12 @@ module movie_rating::movie_rating{
     struct NewMovieAddedEvent has copy, drop{
         movie_id: ID,
         movie_title: String
+    }
+
+    struct NewRatingAddedEvent has copy, drop{
+        for_movie: ID,
+        rating: u64,
+        from: address
     }
 
     // ##### CONSTANTS #####
@@ -118,11 +127,26 @@ module movie_rating::movie_rating{
             assert!((MIN_RATING <= rating) && (rating <= MAX_RATING), ERatingOutOfBounds);
             assert!(movie_rated_before(db, &movie, ctx), EMovieRatedBefore);
 
-            add_rating(db, movie, Rating {
+            let addr = tx_context::sender(ctx);
+
+            add_rating(db, *&movie, Rating {
+                for_movie: movie,
+                rating: *&rating,
+                from: *&addr
+            }, ctx);
+
+            event::emit(NewRatingAddedEvent{
                 for_movie: movie,
                 rating,
-                from: tx_context::sender(ctx)
-            }, ctx)
+                from: addr
+            })
+        }
+
+        public fun get_movie_average_rating(db: &mut IMDB, movie: ID, _ctx: &mut TxContext): u64 {
+            let mov = get_movie_ref_from_db(&mut db.movie_db, &movie);
+            let avg = get_average(mov);
+
+            *&avg.average_rating
         }
 
 
