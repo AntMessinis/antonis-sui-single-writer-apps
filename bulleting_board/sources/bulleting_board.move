@@ -240,7 +240,7 @@ module bulleting_board::bulleting_board {
     public fun readNoteFromAdminBulletingBoard(
         board: &mut AdminBulletingBoard,
         note_id: &ID,
-        ctx: &mut TxContext
+        _ctx: &mut TxContext
     ): (&String, &String, &address, &address){
 
         let note_ref = vec_map::get<ID, BulletingNote>(&mut board.notes, note_id);
