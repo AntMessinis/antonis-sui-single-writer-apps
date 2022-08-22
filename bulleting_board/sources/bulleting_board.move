@@ -12,7 +12,7 @@ module bulleting_board::bulleting_board {
     // One where everyone is allowed to post notes 
     // And one where only an admin is allowed to post notes
 
-    // #### TODO add testing functions
+    // This is made with sui 0.6.2
 
     // A shared bulleting board where anyone can post a note
     struct PublicBulletingBoard has key {
@@ -43,9 +43,9 @@ module bulleting_board::bulleting_board {
 
     // An event that announces that someone has posted a new note on public bulleting board
     struct NewNotePostedEvent has copy, drop {
-        note_title: String,
         note_id: ID,
-        note_author: address,
+        note_title: String,
+        note_author: address
     }
 
     // An event that announces that the admin has posted a new note
@@ -92,6 +92,7 @@ module bulleting_board::bulleting_board {
         }, tx_context::sender(ctx))
     }
 
+    // Post a note withoute referencing another object
     public fun PostSimpleNote(
         board: &mut PublicBulletingBoard, 
         title: vector<u8>, 
@@ -128,6 +129,7 @@ module bulleting_board::bulleting_board {
             })
         }
 
+    // Post a note that references an other object
     public fun PostNoteWithRef(
         board: &mut PublicBulletingBoard, 
         title: vector<u8>, 
@@ -267,4 +269,5 @@ module bulleting_board::bulleting_board {
             new_owner: next_owner
         })
     }
+
 }

@@ -8,6 +8,9 @@ module movie_rating::movie_rating{
     use std::vector;
     use sui::event;
 
+    // This module creates a shared movie database object where everyone can vote
+
+    // This is made with sui 0.6.2
 
     // A shared object where movie objects are stored
     struct IMDB has key {
@@ -17,7 +20,7 @@ module movie_rating::movie_rating{
     }
 
     // Only the admin has the authority to add movies
-    // But anyone can add add a rating
+    // But anyone can add a rating
     struct MovieAdmin has key {
         id: UID
     }
@@ -34,7 +37,8 @@ module movie_rating::movie_rating{
     struct AverageRating has store {
         for_movie: ID,
         average_rating: u64,
-        people_voted: VecMap<address, Rating>
+        people_voted: VecMap<address, Rating>,
+        total_score: u64
     }
 
 
@@ -113,7 +117,8 @@ module movie_rating::movie_rating{
                     movie_rating: option::some(AverageRating{
                         for_movie: *&movie_ID,
                         average_rating: 0,
-                        people_voted: vec_map::empty<address, Rating>()
+                        people_voted: vec_map::empty<address, Rating>(),
+                        total_score: 0
                     })
             });
 
@@ -166,33 +171,39 @@ module movie_rating::movie_rating{
             string_vec
         }
 
+        // Checks if the movies has been rated before 
         fun movie_rated_before(db: &mut IMDB, movie_id: &ID, ctx: &mut TxContext): bool {
             let movie = get_movie_ref_from_db(&mut db.movie_db, movie_id);
             let average_rating = option::borrow<AverageRating>(&movie.movie_rating);
             
             vec_map::contains(&average_rating.people_voted, &tx_context::sender(ctx))
-
         }
 
+        // Checks if this rating has been send from this address
         fun contains(rating: &Rating, from_address: &address): bool{
             &rating.from == from_address
         }
 
+        // Gets a mut Movie reference from IMDB shared object's database
         fun get_movie_ref_from_db(db: &mut VecMap<ID,Movie>, movie_id: &ID): &mut Movie {
             vec_map::get_mut<ID,Movie>(db, movie_id)
         }
 
+        // Get's a mut reference to the encapsulated average rating
         fun get_average(movie: &mut Movie): &mut AverageRating{
             option::borrow_mut(&mut movie.movie_rating)
         }
 
+
+        // Add and update the Movie's rating
         fun add_rating(db: &mut IMDB, for_movie: ID, rating: Rating, ctx: &mut TxContext){
             let movie = get_movie_ref_from_db(&mut db.movie_db, &for_movie);
 
             let avg = get_average(movie);
 
+            avg.total_score = avg.total_score + *&rating.rating;
             vec_map::insert<address, Rating>(&mut avg.people_voted, tx_context::sender(ctx), rating);
 
-            avg.average_rating = (avg.average_rating + 1) / vec_map::size<address, Rating>(&avg.people_voted);
+            avg.average_rating = *&avg.total_score / vec_map::size<address, Rating>(&avg.people_voted);
         }
 }
