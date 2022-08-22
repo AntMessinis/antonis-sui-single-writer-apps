@@ -161,7 +161,7 @@ module movie_rating::movie_rating{
         fun vector_u8_to_string(v: vector<vector<u8>>): vector<String>{
             let string_vec = vector::empty<String>();
 
-            while (vector::length(&v) != 0) {
+            while (vector::length(&v) >= 1) {
                 let vec = vector::pop_back<vector<u8>>(&mut v);
                 let string = utf8::string_unsafe(vec);
 
